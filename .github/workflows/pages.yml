@@ -31,7 +31,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p _site/src _site/docs
-          cp index.html styles.css .nojekyll _site/
+          cp index.html styles.css favicon.svg .nojekyll _site/
           cp src/analyzer.js src/app.js _site/src/
           cp docs/RESEARCH.md docs/SPEC.md _site/docs/
       - uses: actions/configure-pages@v6

@@ -12,6 +12,10 @@ test("page declares a restrictive Content Security Policy", () => {
   assert.match(html, /object-src 'none'/);
 });
 
+test("page declares a local icon", () => {
+  assert.match(html, /<link rel="icon" href="favicon\.svg"/);
+});
+
 test("primary inputs have explicit labels and descriptions", () => {
   assert.match(html, /<label for="raw-input">/);
   assert.match(html, /<label for="approval-input">/);

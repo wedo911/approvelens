@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Compare a raw AI tool payload with the text shown in its approval dialog. Everything stays in your browser.">
+    <meta name="color-scheme" content="dark light">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; font-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+    <title>ApproveLens — inspect what an AI approval dialog hides</title>
+    <link rel="stylesheet" href="styles.css">
+    <script type="module" src="src/app.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#workspace">Skip to analyzer</a>
+
+    <header class="site-header">
+      <a class="brand" href="./" aria-label="ApproveLens home">
+        <span class="brand-mark" aria-hidden="true">A/L</span>
+        <span>ApproveLens</span>
+      </a>
+      <span class="privacy-badge"><span aria-hidden="true">●</span> Local-only analysis</span>
+    </header>
+
+    <main id="workspace">
+      <section class="hero" aria-labelledby="page-title">
+        <p class="eyebrow">Approval-view fidelity checker</p>
+        <h1 id="page-title">See what the approval dialog does not show.</h1>
+        <p class="lede">Compare an AI tool's raw payload with the human-readable approval view. Detect hidden Unicode payloads, dangerous display controls, and omitted values before you approve.</p>
+      </section>
+
+      <section class="analyzer-shell" aria-labelledby="analyzer-title">
+        <div class="section-heading">
+          <div>
+            <p class="step">01 / Input</p>
+            <h2 id="analyzer-title">Compare the two surfaces</h2>
+          </div>
+          <div class="example-actions" aria-label="Examples">
+            <button id="safe-example" class="button button-quiet" type="button">Load safe example</button>
+            <button id="hidden-example" class="button button-quiet" type="button">Load hidden example</button>
+          </div>
+        </div>
+
+        <form id="analysis-form">
+          <div class="input-grid">
+            <div class="field">
+              <div class="field-heading">
+                <label for="raw-input">Raw tool payload</label>
+                <span id="raw-count" class="character-count">0 / 1,000,000</span>
+              </div>
+              <p id="raw-help" class="field-help">Paste the original JSON or plain text sent by the tool.</p>
+              <textarea id="raw-input" name="raw" rows="13" maxlength="1000000" required spellcheck="false" aria-describedby="raw-help raw-count" placeholder='{"tool":"send_email","recipient":"alice@example.org"}'></textarea>
+            </div>
+
+            <div class="field">
+              <div class="field-heading">
+                <label for="approval-input">Approval view</label>
+                <span id="approval-count" class="character-count">0 / 1,000,000</span>
+              </div>
+              <p id="approval-help" class="field-help">Paste the exact text a person sees before approving.</p>
+              <textarea id="approval-input" name="approval" rows="13" maxlength="1000000" required spellcheck="false" aria-describedby="approval-help approval-count" placeholder="Send email to alice@example.org"></textarea>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button class="button button-primary" type="submit">Analyze fidelity</button>
+            <button id="clear-button" class="button button-secondary" type="button">Clear</button>
+            <p class="privacy-note">Nothing is uploaded, stored, or logged.</p>
+          </div>
+          <p class="scope-note"><strong>Scope:</strong> ApproveLens checks display fidelity. It does not determine whether an action is safe or authorize it.</p>
+        </form>
+      </section>
+
+      <section id="results" class="results" aria-labelledby="results-title" hidden>
+        <div class="section-heading results-heading">
+          <div>
+            <p class="step">02 / Findings</p>
+            <h2 id="results-title" tabindex="-1">Analysis result</h2>
+          </div>
+          <div class="report-actions">
+            <button id="copy-safe" class="button button-secondary" type="button">Copy safe projection</button>
+            <button id="download-report" class="button button-secondary" type="button">Download JSON report</button>
+          </div>
+        </div>
+
+        <div id="verdict" class="verdict" data-verdict="faithful">
+          <p id="verdict-label" class="verdict-label"></p>
+          <p id="verdict-detail" class="verdict-detail"></p>
+        </div>
+
+        <dl class="metrics" aria-label="Analysis totals">
+          <div><dt>Findings</dt><dd id="metric-findings">0</dd></div>
+          <div><dt>Decoded payloads</dt><dd id="metric-tags">0</dd></div>
+          <div><dt>Values checked</dt><dd id="metric-checked">0</dd></div>
+          <div><dt>Values missing</dt><dd id="metric-missing">0</dd></div>
+        </dl>
+
+        <section id="decoded-section" class="result-panel" aria-labelledby="decoded-title" hidden>
+          <h3 id="decoded-title">Decoded TAG payloads</h3>
+          <p>These characters are normally invisible in common approval interfaces.</p>
+          <ul id="decoded-list" class="decoded-list"></ul>
+        </section>
+
+        <section id="missing-section" class="result-panel" aria-labelledby="missing-title" hidden>
+          <h3 id="missing-title">Raw values absent from the approval view</h3>
+          <div class="table-scroll" tabindex="0">
+            <table>
+              <caption>Primitive JSON values not represented in the displayed approval text</caption>
+              <thead><tr><th scope="col">JSON Pointer</th><th scope="col">Value</th><th scope="col">Type</th></tr></thead>
+              <tbody id="missing-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="findings-section" class="result-panel" aria-labelledby="findings-title" hidden>
+          <h3 id="findings-title">Suspicious characters</h3>
+          <div class="table-scroll" tabindex="0">
+            <table>
+              <caption>Invisible or display-changing Unicode and control characters</caption>
+              <thead><tr><th scope="col">Severity</th><th scope="col">Surface</th><th scope="col">Location</th><th scope="col">Character</th><th scope="col">Category</th></tr></thead>
+              <tbody id="findings-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <div class="projection-grid">
+          <section class="result-panel" aria-labelledby="visible-title">
+            <h3 id="visible-title">Visible raw projection</h3>
+            <p>Suspicious characters are replaced with explicit labels.</p>
+            <pre id="visible-projection" tabindex="0"></pre>
+          </section>
+          <section class="result-panel" aria-labelledby="safe-title">
+            <h3 id="safe-title">Safe raw projection</h3>
+            <p>Dangerous display controls are removed. Review it before reuse.</p>
+            <textarea id="safe-projection" rows="9" readonly aria-label="Safe raw projection"></textarea>
+          </section>
+        </div>
+      </section>
+
+      <p id="live-status" class="sr-only" role="status" aria-live="polite"></p>
+    </main>
+
+    <footer>
+      <p>Open source under the MIT License. Built for human oversight of AI tool calls.</p>
+      <nav aria-label="Project links">
+        <a href="https://github.com/wedo911/approvelens">Source</a>
+        <a href="docs/RESEARCH.md">Research</a>
+        <a href="docs/SPEC.md">Specification</a>
+      </nav>
+    </footer>
+  </body>
+</html>
